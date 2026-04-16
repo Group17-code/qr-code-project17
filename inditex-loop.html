@@ -1,0 +1,776 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Inditex Loop</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500;600&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --ecru: #F5F0E8; --ivory: #FAF7F2; --charcoal: #1A1A18;
+    --warm-gray: #8A8680; --accent: #2D4A3E; --accent-light: #E8F0EC;
+    --gold: #B8955A; --gold-light: #F5EDD9; --border: rgba(26,26,24,0.10);
+    --fd: 'Cormorant Garamond', serif; --fb: 'DM Sans', sans-serif;
+  }
+  html, body { height: 100%; background: #E8E4DC; font-family: var(--fb); }
+  body { display: flex; justify-content: center; align-items: flex-start; padding: 24px 0 48px; min-height: 100vh; }
+
+  .app-shell {
+    width: 390px; min-height: 780px; background: var(--ivory);
+    border-radius: 36px; overflow: hidden; display: flex; flex-direction: column;
+    box-shadow: 0 32px 80px rgba(0,0,0,0.18), 0 8px 24px rgba(0,0,0,0.1);
+    position: relative;
+  }
+
+  /* Screens */
+  .screen { display: none; flex-direction: column; flex: 1; min-height: 0; }
+  .screen.active { display: flex; }
+  .scroll-area { flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; }
+  .scroll-area::-webkit-scrollbar { display: none; }
+
+  /* Topbar */
+  .topbar { padding: 24px 24px 10px; display: flex; align-items: center; justify-content: space-between; background: var(--ivory); flex-shrink: 0; }
+  .logo-wordmark { font-family: var(--fd); font-size: 14px; font-weight: 500; letter-spacing: 0.18em; text-transform: uppercase; color: var(--charcoal); }
+  .logo-sub { font-size: 9px; letter-spacing: 0.22em; text-transform: uppercase; color: var(--warm-gray); margin-top: 1px; }
+  .notif-btn { width: 36px; height: 36px; border-radius: 50%; background: var(--ecru); border: 0.5px solid var(--border); display: flex; align-items: center; justify-content: center; cursor: pointer; position: relative; }
+  .notif-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--gold); position: absolute; top: 7px; right: 7px; }
+
+  /* Hero card */
+  .hero-card { margin: 4px 18px 0; background: var(--accent); border-radius: 22px; padding: 26px 22px; position: relative; overflow: hidden; }
+  .hero-card::before { content:''; position:absolute; width:200px; height:200px; border-radius:50%; background:rgba(255,255,255,0.04); top:-60px; right:-40px; }
+  .hero-card::after { content:''; position:absolute; width:120px; height:120px; border-radius:50%; background:rgba(255,255,255,0.04); bottom:-30px; left:20px; }
+  .hero-greeting { font-size:11px; letter-spacing:0.14em; text-transform:uppercase; color:rgba(255,255,255,0.5); margin-bottom:5px; }
+  .hero-name { font-family:var(--fd); font-size:28px; font-weight:400; color:#fff; margin-bottom:18px; }
+  .points-row { display:flex; align-items:flex-end; gap:8px; margin-bottom:18px; }
+  .points-num { font-family:var(--fd); font-size:46px; font-weight:300; color:#fff; line-height:1; }
+  .points-label { font-size:11px; letter-spacing:0.14em; text-transform:uppercase; color:rgba(255,255,255,0.5); padding-bottom:8px; }
+  .progress-wrap { background:rgba(255,255,255,0.12); border-radius:99px; height:4px; margin-bottom:8px; }
+  .progress-bar { height:4px; border-radius:99px; background:var(--gold); width:62%; transition:width 0.8s cubic-bezier(.22,1,.36,1); }
+  .progress-meta { display:flex; justify-content:space-between; font-size:10px; letter-spacing:0.1em; text-transform:uppercase; color:rgba(255,255,255,0.38); }
+
+  /* Section */
+  .section-title { font-family:var(--fd); font-size:20px; font-weight:400; color:var(--charcoal); padding:18px 20px 10px; }
+  .quick-grid { display:grid; grid-template-columns:1fr 1fr; gap:10px; padding:0 18px; }
+  .quick-card { background:var(--ecru); border-radius:16px; padding:17px 15px; cursor:pointer; border:0.5px solid var(--border); transition:transform 0.15s, box-shadow 0.15s; }
+  .quick-card:hover { transform:translateY(-1px); box-shadow:0 4px 16px rgba(0,0,0,0.07); }
+  .quick-card:active { transform:scale(0.97); }
+  .quick-card.accent-card { background:var(--gold-light); }
+  .qc-icon { width:34px; height:34px; border-radius:10px; display:flex; align-items:center; justify-content:center; margin-bottom:11px; font-size:15px; }
+  .qc-icon.green { background:var(--accent-light); color:var(--accent); }
+  .qc-icon.gold { background:rgba(184,149,90,0.15); color:var(--gold); }
+  .qc-title { font-size:13px; font-weight:500; color:var(--charcoal); margin-bottom:3px; }
+  .qc-sub { font-size:11px; color:var(--warm-gray); line-height:1.4; }
+
+  /* Activity */
+  .activity-list { padding:0 18px 16px; }
+  .activity-item { display:flex; align-items:center; gap:13px; padding:12px 0; border-bottom:0.5px solid var(--border); cursor:pointer; transition:opacity 0.15s; }
+  .activity-item:last-child { border-bottom:none; }
+  .activity-item:hover { opacity:0.8; }
+  .act-icon { width:42px; height:42px; border-radius:12px; overflow:hidden; display:flex; align-items:center; justify-content:center; flex-shrink:0; background:var(--accent-light); }
+  .act-icon img { width:100%; height:100%; object-fit:cover; }
+  .act-info { flex:1; min-width:0; }
+  .act-title { font-size:13px; font-weight:500; color:var(--charcoal); }
+  .act-date { font-size:11px; color:var(--warm-gray); margin-top:2px; }
+  .act-pts { font-family:var(--fd); font-size:16px; font-weight:500; color:var(--accent); white-space:nowrap; }
+
+  /* Buttons */
+  .btn-primary { width:100%; padding:14px; background:var(--charcoal); color:#fff; border:none; border-radius:12px; font-family:var(--fb); font-size:12px; letter-spacing:0.1em; text-transform:uppercase; cursor:pointer; transition:opacity 0.2s, background 0.2s; }
+  .btn-primary:hover { opacity:0.88; }
+  .btn-primary:active { opacity:0.75; }
+  .btn-secondary { width:100%; padding:13px; background:transparent; color:var(--charcoal); border:0.5px solid rgba(26,26,24,0.2); border-radius:12px; font-family:var(--fb); font-size:12px; letter-spacing:0.1em; text-transform:uppercase; cursor:pointer; margin-top:9px; transition:background 0.15s; }
+  .btn-secondary:hover { background:var(--ecru); }
+
+  /* SCAN */
+  .back-btn { display:flex; align-items:center; gap:8px; padding:20px 22px 10px; cursor:pointer; font-size:12px; color:var(--warm-gray); letter-spacing:0.06em; background:none; border:none; text-transform:uppercase; }
+  .back-btn:hover { color:var(--charcoal); }
+  .scan-hero { background:var(--ecru); border-radius:20px; padding:28px 22px; text-align:center; margin-bottom:16px; border:0.5px solid var(--border); }
+  .scan-title { font-family:var(--fd); font-size:26px; font-weight:400; color:var(--charcoal); margin-bottom:8px; }
+  .scan-sub { font-size:13px; color:var(--warm-gray); line-height:1.6; margin-bottom:22px; }
+  .qr-frame { width:154px; height:154px; margin:0 auto 22px; border:2px solid var(--charcoal); border-radius:12px; display:grid; grid-template-columns:repeat(7,1fr); gap:3px; padding:9px; background:#fff; position:relative; overflow:hidden; }
+  .qr-cell { border-radius:2px; background:transparent; }
+  .qr-black { background:var(--charcoal); }
+  .qr-scan-line { position:absolute; left:0; right:0; height:2px; background:var(--accent); opacity:0; top:0; }
+  .qr-scan-line.running { opacity:1; animation:scanline 1.1s ease-in-out forwards; }
+  @keyframes scanline { 0%{top:0;opacity:1} 100%{top:100%;opacity:0.2} }
+  .how-card { background:var(--gold-light); border-radius:16px; padding:18px 18px; margin-bottom:8px; }
+  .how-step { display:flex; gap:13px; align-items:flex-start; margin-bottom:14px; }
+  .how-step:last-child { margin-bottom:0; }
+  .step-num { width:26px; height:26px; border-radius:50%; background:var(--gold); color:#fff; font-size:11px; font-weight:500; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+  .step-text { font-size:12px; color:var(--charcoal); line-height:1.55; padding-top:3px; }
+
+  /* PASSPORT LIST */
+  .wardrobe-filter { display:flex; gap:7px; padding:4px 18px 14px; overflow-x:auto; }
+  .wardrobe-filter::-webkit-scrollbar { display:none; }
+  .filter-pill { padding:7px 14px; border-radius:99px; font-size:10px; letter-spacing:0.08em; text-transform:uppercase; cursor:pointer; white-space:nowrap; border:0.5px solid var(--border); background:var(--ecru); color:var(--warm-gray); transition:background 0.15s,color 0.15s; }
+  .filter-pill.active { background:var(--charcoal); color:#fff; border-color:var(--charcoal); }
+  .garment-list { padding:0 18px 20px; display:flex; flex-direction:column; gap:11px; }
+  .garment-card { background:#fff; border-radius:18px; border:0.5px solid var(--border); overflow:hidden; cursor:pointer; display:flex; transition:transform 0.15s, box-shadow 0.15s; }
+  .garment-card:hover { transform:translateY(-1px); box-shadow:0 6px 20px rgba(0,0,0,0.07); }
+  .garment-card:active { transform:scale(0.98); }
+  .garment-thumb { width:84px; min-height:96px; flex-shrink:0; overflow:hidden; position:relative; }
+  .garment-thumb img { width:100%; height:100%; object-fit:cover; }
+  .garment-thumb-fallback { width:100%; height:100%; display:flex; align-items:center; justify-content:center; font-size:30px; }
+  .thumb-green { background:var(--accent-light); }
+  .thumb-gold { background:var(--gold-light); }
+  .thumb-gray { background:var(--ecru); }
+  .garment-body { padding:13px 13px 13px 11px; flex:1; }
+  .garment-brand { font-size:10px; letter-spacing:0.14em; text-transform:uppercase; color:var(--warm-gray); margin-bottom:3px; }
+  .garment-name { font-family:var(--fd); font-size:16px; font-weight:400; color:var(--charcoal); margin-bottom:6px; }
+  .garment-tags { display:flex; gap:5px; flex-wrap:wrap; margin-bottom:7px; }
+  .gtag { font-size:9px; letter-spacing:0.07em; text-transform:uppercase; padding:3px 8px; border-radius:99px; font-weight:500; }
+  .gtag-eco { background:var(--accent-light); color:var(--accent); }
+  .gtag-cert { background:var(--gold-light); color:var(--gold); }
+  .gtag-dep { background:#EEF1FF; color:#4B6BCC; }
+  .garment-meta { font-size:11px; color:var(--warm-gray); }
+
+  /* PASSPORT DETAIL */
+  .passport-header { background:var(--charcoal); padding:20px 22px 26px; position:relative; overflow:hidden; flex-shrink:0; }
+  .passport-header::before { content:''; position:absolute; width:180px; height:180px; border-radius:50%; background:rgba(255,255,255,0.03); top:-60px; right:-30px; }
+  .ph-back { display:flex; align-items:center; gap:7px; font-size:11px; letter-spacing:0.09em; text-transform:uppercase; color:rgba(255,255,255,0.4); cursor:pointer; background:none; border:none; margin-bottom:18px; }
+  .ph-back:hover { color:rgba(255,255,255,0.7); }
+  .ph-img { width:100%; height:160px; border-radius:14px; overflow:hidden; margin-bottom:16px; position:relative; }
+  .ph-img img { width:100%; height:100%; object-fit:cover; }
+  .ph-brand { font-size:10px; letter-spacing:0.2em; text-transform:uppercase; color:rgba(255,255,255,0.38); margin-bottom:3px; }
+  .ph-name { font-family:var(--fd); font-size:26px; font-weight:400; color:#fff; margin-bottom:3px; }
+  .ph-ref { font-size:11px; color:rgba(255,255,255,0.32); letter-spacing:0.1em; margin-bottom:18px; }
+  .ph-badges { display:flex; gap:7px; flex-wrap:wrap; }
+  .ph-badge { padding:4px 11px; border-radius:99px; font-size:9px; letter-spacing:0.1em; text-transform:uppercase; font-weight:500; }
+  .badge-eco { background:rgba(45,74,62,0.6); color:#A8D4BF; }
+  .badge-cert { background:rgba(184,149,90,0.22); color:#D4AC6E; }
+  .badge-rec { background:rgba(255,255,255,0.08); color:rgba(255,255,255,0.5); }
+  .passport-pts { background:var(--accent); margin:0 18px; border-radius:0 0 14px 14px; padding:13px 18px; display:flex; justify-content:space-between; align-items:center; flex-shrink:0; }
+  .ppts-label { font-size:10px; letter-spacing:0.12em; text-transform:uppercase; color:rgba(255,255,255,0.5); }
+  .ppts-val { font-family:var(--fd); font-size:21px; color:#fff; }
+
+  /* Passport body & tabs */
+  .passport-body { padding:14px 18px 24px; }
+  .tabs { display:flex; gap:4px; background:var(--ecru); border-radius:11px; padding:4px; margin-bottom:16px; border:0.5px solid var(--border); }
+  .tab-btn { flex:1; padding:8px 3px; border:none; background:transparent; border-radius:8px; font-family:var(--fb); font-size:10px; letter-spacing:0.07em; text-transform:uppercase; color:var(--warm-gray); cursor:pointer; transition:background 0.18s, color 0.18s, box-shadow 0.18s; }
+  .tab-btn.active { background:#fff; color:var(--charcoal); font-weight:500; box-shadow:0 1px 5px rgba(0,0,0,0.07); }
+  .tab-panel { display:none !important; }
+  .tab-panel.active { display:block !important; }
+
+  /* Timeline */
+  .timeline { position:relative; padding-left:26px; }
+  .timeline::before { content:''; position:absolute; left:7px; top:6px; bottom:6px; width:1px; background:var(--border); }
+  .tl-item { position:relative; margin-bottom:18px; }
+  .tl-item:last-child { margin-bottom:0; }
+  .tl-dot { position:absolute; left:-22px; top:4px; width:10px; height:10px; border-radius:50%; background:var(--accent); border:2px solid var(--ivory); }
+  .tl-dot.gold { background:var(--gold); }
+  .tl-dot.red { background:#E24B4A; }
+  .tl-country { font-size:9px; letter-spacing:0.12em; text-transform:uppercase; color:var(--warm-gray); margin-bottom:2px; }
+  .tl-step { font-size:13px; font-weight:500; color:var(--charcoal); margin-bottom:2px; }
+  .tl-detail { font-size:11px; color:var(--warm-gray); line-height:1.55; }
+  .tl-date { font-size:10px; color:var(--accent); margin-top:3px; }
+
+  /* Composition */
+  .compo-item { margin-bottom:13px; }
+  .compo-header { display:flex; justify-content:space-between; margin-bottom:5px; }
+  .compo-name { font-size:13px; color:var(--charcoal); font-weight:500; }
+  .compo-pct { font-size:13px; color:var(--warm-gray); }
+  .compo-bar-bg { background:var(--ecru); border-radius:99px; height:5px; }
+  .compo-bar { height:5px; border-radius:99px; }
+  .compo-origin { font-size:11px; color:var(--warm-gray); margin-top:3px; }
+
+  /* Eco */
+  .eco-grid { display:grid; grid-template-columns:1fr 1fr; gap:9px; margin-bottom:16px; }
+  .eco-card { background:var(--ecru); border-radius:13px; padding:14px 13px; border:0.5px solid var(--border); }
+  .eco-icon { font-size:17px; margin-bottom:7px; }
+  .eco-val { font-family:var(--fd); font-size:19px; color:var(--charcoal); margin-bottom:2px; }
+  .eco-label { font-size:11px; color:var(--warm-gray); line-height:1.4; }
+  .cert-row { display:flex; align-items:center; gap:11px; padding:11px 0; border-bottom:0.5px solid var(--border); }
+  .cert-row:last-child { border-bottom:none; }
+  .cert-icon { width:34px; height:34px; border-radius:9px; background:var(--accent-light); display:flex; align-items:center; justify-content:center; font-size:13px; flex-shrink:0; }
+  .cert-name { font-size:12px; font-weight:500; color:var(--charcoal); }
+  .cert-body { font-size:11px; color:var(--warm-gray); margin-top:1px; }
+  .cert-check { margin-left:auto; font-size:13px; color:var(--accent); }
+
+  /* Rewards */
+  .tier-card { margin:4px 18px 14px; background:linear-gradient(135deg, var(--accent) 0%, #1a3329 100%); border-radius:20px; padding:20px; display:flex; align-items:center; gap:14px; }
+  .tier-badge { width:52px; height:52px; border-radius:50%; background:rgba(184,149,90,0.2); border:1.5px solid var(--gold); display:flex; align-items:center; justify-content:center; font-family:var(--fd); font-size:20px; color:var(--gold); flex-shrink:0; }
+  .tier-name { font-family:var(--fd); font-size:19px; font-weight:400; color:#fff; }
+  .tier-pts-text { font-size:10px; letter-spacing:0.12em; text-transform:uppercase; color:rgba(255,255,255,0.42); margin-top:2px; }
+  .rewards-grid { display:grid; grid-template-columns:1fr 1fr; gap:9px; padding:0 18px 20px; }
+  .reward-card { background:var(--ecru); border-radius:15px; padding:16px 13px; border:0.5px solid var(--border); cursor:pointer; transition:transform 0.15s, box-shadow 0.15s; position:relative; overflow:hidden; }
+  .reward-card:hover { transform:translateY(-1px); box-shadow:0 4px 14px rgba(0,0,0,0.07); }
+  .reward-card:active { transform:scale(0.97); }
+  .reward-card.locked { opacity:0.48; pointer-events:none; }
+  .rw-icon { font-size:22px; margin-bottom:9px; }
+  .rw-title { font-size:12px; font-weight:500; color:var(--charcoal); margin-bottom:4px; }
+  .rw-pts { font-size:11px; color:var(--warm-gray); }
+  .rw-badge { position:absolute; top:9px; right:9px; background:var(--gold-light); color:var(--gold); font-size:8px; letter-spacing:0.1em; text-transform:uppercase; padding:3px 7px; border-radius:99px; font-weight:500; }
+  .lock-icon { position:absolute; top:9px; right:9px; font-size:13px; color:var(--warm-gray); }
+
+  /* Profile */
+  .stat-trio { display:grid; grid-template-columns:1fr 1fr 1fr; gap:8px; margin-bottom:18px; }
+  .stat-cell { background:var(--ecru); border-radius:12px; padding:13px 8px; text-align:center; border:0.5px solid var(--border); }
+  .stat-num { font-family:var(--fd); font-size:21px; color:var(--charcoal); }
+  .stat-lbl { font-size:9px; color:var(--warm-gray); letter-spacing:0.08em; text-transform:uppercase; margin-top:2px; }
+
+  /* Bottom nav */
+  .bottom-nav { background:rgba(250,247,242,0.96); backdrop-filter:blur(12px); border-top:0.5px solid var(--border); display:flex; padding:10px 4px 16px; flex-shrink:0; }
+  .nav-item { flex:1; display:flex; flex-direction:column; align-items:center; gap:3px; cursor:pointer; padding:5px 0; border:none; background:none; transition:opacity 0.15s; }
+  .nav-icon { font-size:17px; opacity:0.3; transition:opacity 0.2s; line-height:1; }
+  .nav-label { font-size:8px; letter-spacing:0.09em; text-transform:uppercase; color:var(--warm-gray); opacity:0.55; transition:opacity 0.2s, color 0.2s; }
+  .nav-item.active .nav-icon { opacity:1; }
+  .nav-item.active .nav-label { opacity:1; color:var(--accent); font-weight:500; }
+
+  /* Modal */
+  .modal-overlay { display:none; position:fixed; inset:0; background:rgba(26,26,24,0.55); z-index:200; align-items:flex-end; justify-content:center; }
+  .modal-overlay.open { display:flex; }
+  .modal-sheet { background:var(--ivory); border-radius:22px 22px 0 0; padding:26px 22px 34px; width:100%; max-width:390px; animation:slideUp 0.3s cubic-bezier(.22,1,.36,1); }
+  @keyframes slideUp { from{transform:translateY(100%)} to{transform:translateY(0)} }
+  .modal-handle { width:34px; height:3px; background:var(--border); border-radius:99px; margin:0 auto 18px; }
+  .modal-icon { font-size:38px; text-align:center; margin-bottom:10px; }
+  .modal-title { font-family:var(--fd); font-size:24px; font-weight:400; text-align:center; color:var(--charcoal); margin-bottom:7px; }
+  .modal-pts-line { text-align:center; font-size:13px; color:var(--warm-gray); margin-bottom:18px; }
+  .modal-pts-line span { color:var(--accent); font-weight:500; }
+  .modal-desc { font-size:13px; color:var(--warm-gray); line-height:1.6; margin-bottom:20px; text-align:center; }
+  .modal-code { background:var(--ecru); border-radius:11px; padding:15px; text-align:center; margin-bottom:18px; letter-spacing:0.22em; font-size:18px; font-weight:500; color:var(--charcoal); border:0.5px dashed rgba(26,26,24,0.18); }
+
+  /* Toast */
+  .toast { position:fixed; top:16px; left:50%; transform:translateX(-50%) translateY(-110%); background:var(--accent); color:#fff; padding:13px 22px; border-radius:12px; font-size:12px; letter-spacing:0.07em; z-index:300; transition:transform 0.3s cubic-bezier(.22,1,.36,1); white-space:nowrap; box-shadow:0 6px 20px rgba(0,0,0,0.2); }
+  .toast.show { transform:translateX(-50%) translateY(0); }
+</style>
+</head>
+<body>
+
+<div class="app-shell" id="app">
+
+  <!-- ═══ HOME ═══ -->
+  <div class="screen active" id="screen-home">
+    <div class="topbar">
+      <div><div class="logo-wordmark">Inditex Loop</div><div class="logo-sub">Circular Fashion</div></div>
+      <div class="notif-btn">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+        <div class="notif-dot"></div>
+      </div>
+    </div>
+    <div class="scroll-area" style="padding:0 0 8px;">
+      <div class="hero-card">
+        <div class="hero-greeting">Good morning</div>
+        <div class="hero-name">Camille</div>
+        <div class="points-row"><div class="points-num" id="pointsDisplay">2,340</div><div class="points-label">points</div></div>
+        <div class="progress-wrap"><div class="progress-bar" id="progressBar" style="width:62%"></div></div>
+        <div class="progress-meta"><span>Palier Gold</span><span>660 pts → Platinum</span></div>
+      </div>
+      <div class="section-title">Quick Actions</div>
+      <div class="quick-grid">
+        <div class="quick-card" onclick="goTo('scan')">
+          <div class="qc-icon green"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="5" height="5" rx="1"/><rect x="16" y="3" width="5" height="5" rx="1"/><rect x="3" y="16" width="5" height="5" rx="1"/><path d="M21 16h-3v3M15 21v-6h3M15 16h3M9 15v-3h3M9 9h3v3"/></svg></div>
+          <div class="qc-title">Scan QR Code</div><div class="qc-sub">Drop off a garment</div>
+        </div>
+        <div class="quick-card accent-card" onclick="goTo('rewards')">
+          <div class="qc-icon gold"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="8" r="6"/><path d="M15.477 12.89 17 22l-5-3-5 3 1.523-9.11"/></svg></div>
+          <div class="qc-title">My Rewards</div><div class="qc-sub">View perks</div>
+        </div>
+      </div>
+      <div class="section-title">Recent Activity</div>
+      <div class="activity-list">
+        <div class="activity-item" onclick="openPassportDetail('zara-dress')">
+          <div class="act-icon"><img src="https://images.unsplash.com/photo-1572804013309-59a88b7e92f1?w=84&h=84&fit=crop" alt="dress" loading="lazy"></div>
+          <div class="act-info"><div class="act-title">Zara Midi Dress — drop-off</div><div class="act-date">Today · view passport →</div></div>
+          <div class="act-pts">+150</div>
+        </div>
+        <div class="activity-item" onclick="openPassportDetail('massimo-coat')">
+          <div class="act-icon"><img src="https://images.unsplash.com/photo-1539533018447-63fcce2678e3?w=84&h=84&fit=crop" alt="coat" loading="lazy"></div>
+          <div class="act-info"><div class="act-title">Massimo Dutti Coat</div><div class="act-date">3 days ago · view passport →</div></div>
+          <div class="act-pts">+200</div>
+        </div>
+        <div class="activity-item" onclick="openPassportDetail('pb-jeans')">
+          <div class="act-icon"><img src="https://images.unsplash.com/photo-1542272604-787c3835535d?w=84&h=84&fit=crop" alt="jeans" loading="lazy"></div>
+          <div class="act-info"><div class="act-title">Pull &amp; Bear Slim Jeans</div><div class="act-date">Jan 15 · view passport →</div></div>
+          <div class="act-pts">+120</div>
+        </div>
+        <div class="activity-item" style="cursor:default">
+          <div class="act-icon" style="background:var(--gold-light)"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#B8955A" stroke-width="1.8"><path d="M20 12V22H4V12"/><path d="M22 7H2v5h20V7z"/><path d="M12 22V7"/><path d="M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7z"/><path d="M12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z"/></svg></div>
+          <div class="act-info"><div class="act-title">Discount voucher used</div><div class="act-date">Jan 10, 2025</div></div>
+          <div class="act-pts" style="color:var(--gold)">-500</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ SCAN ═══ -->
+  <div class="screen" id="screen-scan">
+    <button class="back-btn" onclick="goTo('home')"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg>&nbsp;Back</button>
+    <div class="scroll-area" style="padding:0 18px 20px;">
+      <div class="scan-hero">
+        <div class="scan-title">Drop Off a Garment</div>
+        <div class="scan-sub">Scan the QR code sewn inside your Inditex garment to earn points and reveal its full product passport.</div>
+        <div class="qr-frame" id="qrMock">
+          <div class="qr-scan-line" id="scanLine"></div>
+          <div class="qr-cell qr-black"></div><div class="qr-cell qr-black"></div><div class="qr-cell qr-black"></div><div class="qr-cell qr-black"></div><div class="qr-cell qr-black"></div><div class="qr-cell"></div><div class="qr-cell qr-black"></div>
+          <div class="qr-cell qr-black"></div><div class="qr-cell"></div><div class="qr-cell"></div><div class="qr-cell"></div><div class="qr-cell qr-black"></div><div class="qr-cell"></div><div class="qr-cell qr-black"></div>
+          <div class="qr-cell qr-black"></div><div class="qr-cell"></div><div class="qr-cell qr-black"></div><div class="qr-cell"></div><div class="qr-cell qr-black"></div><div class="qr-cell"></div><div class="qr-cell qr-black"></div>
+          <div class="qr-cell qr-black"></div><div class="qr-cell"></div><div class="qr-cell qr-black"></div><div class="qr-cell"></div><div class="qr-cell qr-black"></div><div class="qr-cell"></div><div class="qr-cell qr-black"></div>
+          <div class="qr-cell qr-black"></div><div class="qr-cell"></div><div class="qr-cell qr-black"></div><div class="qr-cell"></div><div class="qr-cell qr-black"></div><div class="qr-cell"></div><div class="qr-cell qr-black"></div>
+          <div class="qr-cell qr-black"></div><div class="qr-cell"></div><div class="qr-cell"></div><div class="qr-cell"></div><div class="qr-cell qr-black"></div><div class="qr-cell"></div><div class="qr-cell qr-black"></div>
+          <div class="qr-cell qr-black"></div><div class="qr-cell qr-black"></div><div class="qr-cell qr-black"></div><div class="qr-cell qr-black"></div><div class="qr-cell qr-black"></div><div class="qr-cell"></div><div class="qr-cell qr-black"></div>
+        </div>
+        <button class="btn-primary" id="scanBtn" onclick="simulateScan()">Simulate Scan</button>
+      </div>
+      <div class="how-card">
+        <div class="how-step"><div class="step-num">1</div><div class="step-text"><strong>Bring</strong> your used Inditex garments to any store</div></div>
+        <div class="how-step"><div class="step-num">2</div><div class="step-text"><strong>Cashier scans</strong> the QR code — the product passport is revealed</div></div>
+        <div class="how-step"><div class="step-num">3</div><div class="step-text"><strong>Points credited</strong> and garment routed to the correct recycling stream</div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ PASSPORTS LIST ═══ -->
+  <div class="screen" id="screen-passports">
+    <div class="topbar">
+      <div><div class="logo-wordmark">Passports</div><div class="logo-sub">Product Traceability</div></div>
+    </div>
+    <div class="wardrobe-filter">
+      <div class="filter-pill active" onclick="filterGarments('all',this)">All</div>
+      <div class="filter-pill" onclick="filterGarments('zara',this)">Zara</div>
+      <div class="filter-pill" onclick="filterGarments('massimo',this)">Massimo</div>
+      <div class="filter-pill" onclick="filterGarments('pull',this)">Pull &amp; Bear</div>
+    </div>
+    <div class="scroll-area">
+      <div class="garment-list" id="garmentList">
+
+        <div class="garment-card" data-brand="zara" onclick="openPassportDetail('zara-dress')">
+          <div class="garment-thumb thumb-green">
+            <img src="https://images.unsplash.com/photo-1572804013309-59a88b7e92f1?w=168&h=192&fit=crop" alt="Zara dress" loading="lazy" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
+            <div class="garment-thumb-fallback" style="display:none">👗</div>
+          </div>
+          <div class="garment-body">
+            <div class="garment-brand">Zara</div>
+            <div class="garment-name">Midi Fluid Dress</div>
+            <div class="garment-tags"><span class="gtag gtag-eco">Organic</span><span class="gtag gtag-cert">GOTS</span><span class="gtag gtag-dep">Dropped off</span></div>
+            <div class="garment-meta">Ref. ZR-4821 · Size S · +150 pts</div>
+          </div>
+        </div>
+
+        <div class="garment-card" data-brand="massimo" onclick="openPassportDetail('massimo-coat')">
+          <div class="garment-thumb thumb-gold">
+            <img src="https://images.unsplash.com/photo-1539533018447-63fcce2678e3?w=168&h=192&fit=crop" alt="Massimo coat" loading="lazy" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
+            <div class="garment-thumb-fallback" style="display:none">🧥</div>
+          </div>
+          <div class="garment-body">
+            <div class="garment-brand">Massimo Dutti</div>
+            <div class="garment-name">Camel Wool Coat</div>
+            <div class="garment-tags"><span class="gtag gtag-cert">OEKO-TEX</span><span class="gtag gtag-dep">Dropped off</span></div>
+            <div class="garment-meta">Ref. MD-2201 · Size M · +200 pts</div>
+          </div>
+        </div>
+
+        <div class="garment-card" data-brand="pull" onclick="openPassportDetail('pb-jeans')">
+          <div class="garment-thumb thumb-gray">
+            <img src="https://images.unsplash.com/photo-1542272604-787c3835535d?w=168&h=192&fit=crop" alt="Pull Bear jeans" loading="lazy" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
+            <div class="garment-thumb-fallback" style="display:none">👖</div>
+          </div>
+          <div class="garment-body">
+            <div class="garment-brand">Pull &amp; Bear</div>
+            <div class="garment-name">Recycled Slim Jeans</div>
+            <div class="garment-tags"><span class="gtag gtag-eco">Recycled</span><span class="gtag gtag-dep">Dropped off</span></div>
+            <div class="garment-meta">Ref. PB-0934 · Size 32 · +120 pts</div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ PASSPORT DETAIL ═══ -->
+  <div class="screen" id="screen-passport-detail">
+    <div class="scroll-area">
+      <div class="passport-header">
+        <button class="ph-back" id="passportBackBtn">
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg>&nbsp;Back
+        </button>
+        <div class="ph-img"><img id="pp-img" src="" alt="garment" loading="lazy"></div>
+        <div class="ph-brand" id="pp-brand"></div>
+        <div class="ph-name" id="pp-name"></div>
+        <div class="ph-ref" id="pp-ref"></div>
+        <div class="ph-badges" id="pp-badges"></div>
+      </div>
+      <div class="passport-pts">
+        <span class="ppts-label">Points earned</span>
+        <span class="ppts-val" id="pp-pts"></span>
+      </div>
+      <div class="passport-body">
+        <div class="tabs" id="passportTabs">
+          <button class="tab-btn active" data-tab="tab-origin">Origin</button>
+          <button class="tab-btn" data-tab="tab-material">Material</button>
+          <button class="tab-btn" data-tab="tab-eco">Eco Impact</button>
+        </div>
+
+        <div class="tab-panel active" id="tab-origin">
+          <p style="font-size:12px;color:var(--warm-gray);line-height:1.6;margin-bottom:16px;">Full traceability of the garment, from fibre to boutique.</p>
+          <div class="timeline" id="pp-timeline"></div>
+        </div>
+
+        <div class="tab-panel" id="tab-material">
+          <p style="font-size:12px;color:var(--warm-gray);line-height:1.6;margin-bottom:14px;">Detailed composition and origin of each fibre.</p>
+          <div id="pp-compo"></div>
+          <div style="background:var(--ecru);border-radius:13px;padding:15px;margin-top:15px;border:0.5px solid var(--border);">
+            <div style="font-size:10px;letter-spacing:0.1em;text-transform:uppercase;color:var(--warm-gray);margin-bottom:9px;">Care Instructions</div>
+            <div style="font-size:20px;display:flex;gap:11px;" id="pp-care-icons">🌡️🫧🚫🌬️</div>
+            <div style="font-size:11px;color:var(--warm-gray);margin-top:7px;line-height:1.55;" id="pp-care-text"></div>
+          </div>
+          <div style="background:var(--accent-light);border-radius:13px;padding:15px;margin-top:11px;" id="pp-valorisation"></div>
+        </div>
+
+        <div class="tab-panel" id="tab-eco">
+          <p style="font-size:12px;color:var(--warm-gray);line-height:1.6;margin-bottom:13px;">Environmental impact compared to a conventional equivalent.</p>
+          <div class="eco-grid" id="pp-eco-grid"></div>
+          <div style="font-size:12px;font-weight:500;color:var(--charcoal);margin-bottom:9px;">Certifications</div>
+          <div style="background:var(--ecru);border-radius:13px;padding:13px 15px;border:0.5px solid var(--border);" id="pp-certs"></div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ REWARDS ═══ -->
+  <div class="screen" id="screen-rewards">
+    <div class="topbar"><div><div class="logo-wordmark">Rewards</div><div class="logo-sub">Inditex Loop</div></div></div>
+    <div class="scroll-area" style="padding-bottom:8px;">
+      <div class="tier-card">
+        <div class="tier-badge">✦</div>
+        <div><div class="tier-name">Palier Gold</div><div class="tier-pts-text" id="rewardsPts">2,340 points available</div></div>
+      </div>
+      <div class="section-title" style="padding-top:4px;">Your Perks</div>
+      <div class="rewards-grid">
+        <div class="reward-card" onclick="openModal('discount10')"><div class="rw-badge">Available</div><div class="rw-icon">🏷️</div><div class="rw-title">10% off at checkout</div><div class="rw-pts">500 pts</div></div>
+        <div class="reward-card" onclick="openModal('freedelivery')"><div class="rw-badge">Available</div><div class="rw-icon">📦</div><div class="rw-title">Free delivery</div><div class="rw-pts">300 pts</div></div>
+        <div class="reward-card" onclick="openModal('vip')"><div class="rw-badge">Available</div><div class="rw-icon">⭐</div><div class="rw-title">Private sale access</div><div class="rw-pts">800 pts</div></div>
+        <div class="reward-card" onclick="openModal('alteration')"><div class="rw-badge">Available</div><div class="rw-icon">🧵</div><div class="rw-title">Free alteration</div><div class="rw-pts">600 pts</div></div>
+        <div class="reward-card locked"><div class="lock-icon">🔒</div><div class="rw-icon">💎</div><div class="rw-title">25% premium off</div><div class="rw-pts">Platinum required</div></div>
+        <div class="reward-card locked"><div class="lock-icon">🔒</div><div class="rw-icon">🎨</div><div class="rw-title">Personal stylist</div><div class="rw-pts">Platinum required</div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ PROFILE ═══ -->
+  <div class="screen" id="screen-profile">
+    <div class="topbar"><div><div class="logo-wordmark">My Profile</div><div class="logo-sub">Inditex Loop</div></div></div>
+    <div class="scroll-area" style="padding:0 18px 24px;">
+      <div style="text-align:center;padding:24px 0 18px;">
+        <div style="width:68px;height:68px;border-radius:50%;background:var(--accent-light);border:1.5px solid var(--accent);display:flex;align-items:center;justify-content:center;margin:0 auto 11px;font-family:var(--fd);font-size:26px;color:var(--accent);">C</div>
+        <div style="font-family:var(--fd);font-size:22px;color:var(--charcoal);">Camille Martin</div>
+        <div style="font-size:11px;color:var(--warm-gray);margin-top:3px;">camille.martin@email.com</div>
+      </div>
+      <div class="stat-trio">
+        <div class="stat-cell"><div class="stat-num">12</div><div class="stat-lbl">Drop-offs</div></div>
+        <div class="stat-cell"><div class="stat-num" id="profilePts">2,340</div><div class="stat-lbl">Points</div></div>
+        <div class="stat-cell"><div class="stat-num">4</div><div class="stat-lbl">Vouchers</div></div>
+      </div>
+      <div style="background:var(--accent-light);border-radius:15px;padding:16px;margin-bottom:15px;">
+        <div style="font-size:11px;letter-spacing:0.1em;text-transform:uppercase;color:var(--accent);font-weight:500;margin-bottom:7px;">Eco Footprint</div>
+        <div style="display:flex;gap:20px;">
+          <div><div style="font-family:var(--fd);font-size:19px;color:var(--accent);">36 kg</div><div style="font-size:11px;color:var(--warm-gray);">CO₂ saved</div></div>
+          <div><div style="font-family:var(--fd);font-size:19px;color:var(--accent);">12</div><div style="font-size:11px;color:var(--warm-gray);">Garments recycled</div></div>
+        </div>
+      </div>
+      <div style="background:var(--ecru);border-radius:15px;overflow:hidden;border:0.5px solid var(--border);">
+        <div style="padding:15px 17px;border-bottom:0.5px solid var(--border);display:flex;justify-content:space-between;align-items:center;cursor:pointer;"><span style="font-size:13px;color:var(--charcoal);">Notifications</span><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M9 18l6-6-6-6"/></svg></div>
+        <div style="padding:15px 17px;border-bottom:0.5px solid var(--border);display:flex;justify-content:space-between;align-items:center;cursor:pointer;"><span style="font-size:13px;color:var(--charcoal);">Favourite stores</span><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M9 18l6-6-6-6"/></svg></div>
+        <div style="padding:15px 17px;display:flex;justify-content:space-between;align-items:center;cursor:pointer;"><span style="font-size:13px;color:var(--charcoal);">Sign out</span><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M9 18l6-6-6-6"/></svg></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- BOTTOM NAV -->
+  <nav class="bottom-nav">
+    <button class="nav-item active" id="nav-home" onclick="goTo('home')"><span class="nav-icon">⌂</span><span class="nav-label">Home</span></button>
+    <button class="nav-item" id="nav-scan" onclick="goTo('scan')"><span class="nav-icon">⊞</span><span class="nav-label">Scan</span></button>
+    <button class="nav-item" id="nav-passports" onclick="goTo('passports')"><span class="nav-icon">🏷</span><span class="nav-label">Passports</span></button>
+    <button class="nav-item" id="nav-rewards" onclick="goTo('rewards')"><span class="nav-icon">✦</span><span class="nav-label">Rewards</span></button>
+    <button class="nav-item" id="nav-profile" onclick="goTo('profile')"><span class="nav-icon">◯</span><span class="nav-label">Profile</span></button>
+  </nav>
+</div>
+
+<!-- MODAL -->
+<div class="modal-overlay" id="modalOverlay" onclick="if(event.target===this)closeModal()">
+  <div class="modal-sheet">
+    <div class="modal-handle"></div>
+    <div class="modal-icon" id="modalIcon"></div>
+    <div class="modal-title" id="modalTitle"></div>
+    <div class="modal-pts-line" id="modalPtsLine"></div>
+    <div class="modal-desc" id="modalDesc"></div>
+    <div class="modal-code" id="modalCode"></div>
+    <button class="btn-primary" onclick="redeemReward()">Use this voucher</button>
+    <button class="btn-secondary" onclick="closeModal()">Close</button>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast">✓ &nbsp;+150 points credited!</div>
+
+<script>
+/* ---- DATA ---- */
+const garments = {
+  'zara-dress': {
+    brand:'Zara', name:'Midi Fluid Dress', ref:'Ref. ZR-2023-DRS-4821 · Size S',
+    img:'https://images.unsplash.com/photo-1572804013309-59a88b7e92f1?w=354&h=160&fit=crop',
+    badges:'<span class="ph-badge badge-eco">♻ Recyclable</span><span class="ph-badge badge-cert">GOTS Certified</span><span class="ph-badge badge-rec">Recycled Fibres</span>',
+    pts:'+150 pts',
+    timeline:[
+      {dot:'gold', country:'India · Gujarat', step:'Organic Cotton Harvest', detail:'Pesticide-free cotton, organic certified. Family-run 12-ha farm.', date:'March 2023'},
+      {dot:'', country:'Bangladesh · Dhaka', step:'Spinning & Weaving', detail:'Textile BD Ltd — SA8000 certified. 140g/m² weave, 30/1 yarn.', date:'April 2023'},
+      {dot:'', country:'Bangladesh · Chittagong', step:'Dyeing & Finishing', detail:'OEKO-TEX® Standard 100 dyeing. Zero heavy-metal discharge.', date:'April 2023'},
+      {dot:'', country:'Cambodia · Phnom Penh', step:'Garment Manufacturing', detail:'Garment Factory Co. — 420 employees. Fair wage certified.', date:'May 2023'},
+      {dot:'gold', country:'Spain · Arteixo', step:'Inditex Distribution Centre', detail:'Quality control, labelling, EU dispatch. Carbon-offset shipping.', date:'June 2023'},
+      {dot:'gold', country:'France · Paris', step:'Zara Champs-Élysées Boutique', detail:'On sale. Purchased by Camille Martin on Sept 14, 2023.', date:'July 2023'},
+      {dot:'red', country:'France · Lyon', step:'Re:Loop Drop-off ✓', detail:'Returned to Zara Part-Dieu. Routed to Recover™ recycling stream.', date:'Today'},
+    ],
+    compo:[
+      {name:'Organic Cotton',pct:68,color:'var(--accent)',origin:'GOTS certified · India, Gujarat'},
+      {name:'Recycled Viscose',pct:24,color:'var(--gold)',origin:'Post-consumer fibres · Austria, Lenzing™'},
+      {name:'Elastane',pct:8,color:'var(--warm-gray)',origin:'Comfort stretch · Spain'},
+    ],
+    care:'30°C wash · No bleach · Do not tumble dry · Lay flat to dry',
+    valorisation:'This garment will be processed through the <strong style="color:var(--accent)">Recover™</strong> programme: cotton fibres will be mechanically recycled to create new yarn.',
+    eco:[
+      {icon:'💧',val:'-47%',label:'water vs conventional cotton'},
+      {icon:'🌿',val:'2.1 kg',label:'CO₂ saved vs standard production'},
+      {icon:'⚡',val:'-31%',label:'manufacturing energy saved'},
+      {icon:'♻',val:'92%',label:'recyclable at end of life'},
+    ],
+    certs:[
+      {icon:'🌾',name:'GOTS',body:'Global Organic Textile Standard'},
+      {icon:'🔬',name:'OEKO-TEX® 100',body:'Free from harmful substances'},
+      {icon:'🏭',name:'SA8000',body:'Fair working conditions in factory'},
+      {icon:'🚢',name:'Carbon-offset shipping',body:'Maritime freight emissions neutralised'},
+    ]
+  },
+  'massimo-coat': {
+    brand:'Massimo Dutti', name:'Camel Wool Coat', ref:'Ref. MD-2022-MNT-2201 · Size M',
+    img:'https://images.unsplash.com/photo-1539533018447-63fcce2678e3?w=354&h=160&fit=crop',
+    badges:'<span class="ph-badge badge-cert">OEKO-TEX</span><span class="ph-badge badge-rec">Traced Wool</span>',
+    pts:'+200 pts',
+    timeline:[
+      {dot:'gold',country:'Australia · New South Wales',step:'Sheep Farming & Shearing',detail:'Fine merino wool, RWS certified. Animal welfare guaranteed.', date:'Sept 2022'},
+      {dot:'',country:'Italy · Biella',step:'Premium Spinning',detail:'Lanificio Ermenegildo Zegna. 18-micron Super 120s yarn.', date:'Nov 2022'},
+      {dot:'',country:'Portugal · Braga',step:'Weaving & Tailoring',detail:'Têxtil Noroeste — OEKO-TEX certified. 8 specialist craftspeople.', date:'Dec 2022'},
+      {dot:'gold',country:'Spain · Arteixo',step:'Inditex Distribution',detail:'Quality check and dispatch to premium boutiques.', date:'Jan 2023'},
+      {dot:'gold',country:'France · Bordeaux',step:'Massimo Dutti Boutique',detail:'Purchased by Camille Martin on Oct 2, 2023.', date:'Feb 2023'},
+      {dot:'red',country:'France · Lyon',step:'Re:Loop Drop-off ✓',detail:'Routed to wool valorisation — Woolmark Recycling programme.', date:'3 days ago'},
+    ],
+    compo:[
+      {name:'Merino Wool',pct:80,color:'var(--gold)',origin:'RWS certified · Australia'},
+      {name:'Recycled Polyester',pct:15,color:'var(--accent)',origin:'Post-consumer · Spain'},
+      {name:'Silk',pct:5,color:'var(--warm-gray)',origin:'Lining · India'},
+    ],
+    care:'Dry clean only · Do not wring · Store folded · Cedar repellent',
+    valorisation:'This coat will be valorised via the <strong style="color:var(--accent)">Woolmark Recycling</strong> programme: merino wool will be carded and reworked into new premium-grade articles.',
+    eco:[
+      {icon:'🐑',val:'RWS',label:'traced wool — animal welfare'},
+      {icon:'🌿',val:'3.4 kg',label:'CO₂ saved vs synthetic alternative'},
+      {icon:'♻',val:'80%',label:'recyclable via wool stream'},
+      {icon:'💧',val:'-22%',label:'water vs standard production'},
+    ],
+    certs:[
+      {icon:'🐑',name:'RWS',body:'Responsible Wool Standard'},
+      {icon:'🔬',name:'OEKO-TEX® 100',body:'Free from harmful substances'},
+      {icon:'🏭',name:'BSCI',body:'Business Social Compliance Initiative'},
+      {icon:'🚢',name:'Carbon-offset shipping',body:'Air freight emissions neutralised'},
+    ]
+  },
+  'pb-jeans': {
+    brand:'Pull & Bear', name:'Recycled Slim Jeans', ref:'Ref. PB-2023-JNS-0934 · Size 32',
+    img:'https://images.unsplash.com/photo-1542272604-787c3835535d?w=354&h=160&fit=crop',
+    badges:'<span class="ph-badge badge-eco">♻ Recycled</span><span class="ph-badge badge-rec">Recycled Cotton</span>',
+    pts:'+120 pts',
+    timeline:[
+      {dot:'gold',country:'Spain · Barcelona',step:'Post-consumer Textile Collection',detail:'Used jeans collected via Inditex Re:Loop bins. Mechanical shredding and sorting.', date:'Jan 2023'},
+      {dot:'',country:'Turkey · Istanbul',step:'Recycled Fibre Spinning',detail:'Recycled cotton blended with virgin cotton for strength. GRS certified.', date:'Feb 2023'},
+      {dot:'',country:'Turkey · Bursa',step:'Denim Weaving & Ozone Washing',detail:'Ozone wash — zero potassium permanganate. 60% water saved vs acid wash.', date:'Mar 2023'},
+      {dot:'',country:'Morocco · Tangier',step:'Garment Assembly',detail:'Fair Trade certified workshop. 12 km of stitching per pair.', date:'Apr 2023'},
+      {dot:'gold',country:'Spain · Arteixo',step:'Inditex Distribution',detail:'Pull & Bear Europe network dispatch.', date:'May 2023'},
+      {dot:'gold',country:'France · Marseille',step:'Pull & Bear Boutique',detail:'Purchased by Camille Martin on Nov 5, 2023.', date:'June 2023'},
+      {dot:'red',country:'France · Lyon',step:'Re:Loop Drop-off ✓',detail:'Recycled again — closed loop. Jan 15, 2025.', date:'Jan 15, 2025'},
+    ],
+    compo:[
+      {name:'Recycled Cotton',pct:60,color:'var(--accent)',origin:'GRS certified · Turkey'},
+      {name:'Organic Cotton',pct:32,color:'var(--gold)',origin:'Virgin cotton · India'},
+      {name:'Elastane',pct:8,color:'var(--warm-gray)',origin:'Stretch · Portugal'},
+    ],
+    care:'30°C wash · Turn inside out · Do not bleach · Air dry',
+    valorisation:'These jeans enter a closed loop via the <strong style="color:var(--accent)">Denim Re:Born</strong> programme: cotton fibres will be shredded again to produce new recycled denim.',
+    eco:[
+      {icon:'💧',val:'-60%',label:'water vs acid washing process'},
+      {icon:'🌿',val:'1.8 kg',label:'CO₂ saved vs new jeans'},
+      {icon:'♻',val:'60%',label:'post-consumer recycled content'},
+      {icon:'⚡',val:'-40%',label:'energy vs conventional production'},
+    ],
+    certs:[
+      {icon:'♻',name:'GRS',body:'Global Recycled Standard — recycled fibres'},
+      {icon:'💧',name:'Bluesign®',body:'Responsible dyeing processes'},
+      {icon:'🏭',name:'Fair Trade',body:'Fair Trade certified workshop'},
+      {icon:'🌿',name:'Ozone Wash',body:'Zero hazardous chemicals'},
+    ]
+  }
+};
+
+const rewardsData = {
+  discount10:{icon:'🏷️',title:'10% off at checkout',pts:500,desc:'Valid on all Zara, Pull & Bear, Massimo Dutti collections. Present at checkout.',code:'IL-2025-DIS10'},
+  freedelivery:{icon:'📦',title:'Free delivery',pts:300,desc:'Standard delivery included on your next online order. Valid for 30 days.',code:'IL-2025-SHIP'},
+  vip:{icon:'⭐',title:'Private sale access',pts:800,desc:'48-hour early access to the Inditex private sale. Personal invitation.',code:'IL-2025-VIP'},
+  alteration:{icon:'🧵',title:'Free alteration',pts:600,desc:'One simple alteration free at any participating Zara store.',code:'IL-2025-ALT'}
+};
+
+let totalPoints = 2340;
+let currentReward = null;
+let passportBackDest = 'passports';
+
+/* ---- NAVIGATION ---- */
+function goTo(screen) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  const el = document.getElementById('screen-' + screen);
+  if (el) el.classList.add('active');
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  const nav = document.getElementById('nav-' + screen);
+  if (nav) nav.classList.add('active');
+  if (screen === 'passport-detail') {
+    const np = document.getElementById('nav-passports');
+    if (np) np.classList.add('active');
+  }
+}
+
+/* ---- TABS (fixed) ---- */
+document.addEventListener('DOMContentLoaded', function() {
+  document.getElementById('passportTabs').addEventListener('click', function(e) {
+    const btn = e.target.closest('.tab-btn');
+    if (!btn) return;
+    const targetId = btn.getAttribute('data-tab');
+    document.querySelectorAll('#passportTabs .tab-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    document.querySelectorAll('#screen-passport-detail .tab-panel').forEach(p => p.classList.remove('active'));
+    const target = document.getElementById(targetId);
+    if (target) target.classList.add('active');
+  });
+  document.getElementById('passportBackBtn').addEventListener('click', function() {
+    goTo(passportBackDest);
+  });
+});
+
+/* ---- PASSPORT ---- */
+function openPassportDetail(id, from) {
+  passportBackDest = from || 'passports';
+  const g = garments[id];
+  if (!g) return;
+  document.getElementById('pp-img').src = g.img;
+  document.getElementById('pp-brand').textContent = g.brand;
+  document.getElementById('pp-name').textContent = g.name;
+  document.getElementById('pp-ref').textContent = g.ref;
+  document.getElementById('pp-badges').innerHTML = g.badges;
+  document.getElementById('pp-pts').textContent = g.pts;
+
+  // Timeline
+  document.getElementById('pp-timeline').innerHTML = g.timeline.map(t =>
+    `<div class="tl-item">
+      <div class="tl-dot ${t.dot}"></div>
+      <div class="tl-country">${t.country}</div>
+      <div class="tl-step">${t.step}</div>
+      <div class="tl-detail">${t.detail}</div>
+      <div class="tl-date">${t.date}</div>
+    </div>`).join('');
+
+  // Composition
+  document.getElementById('pp-compo').innerHTML = g.compo.map(c =>
+    `<div class="compo-item">
+      <div class="compo-header"><span class="compo-name">${c.name}</span><span class="compo-pct">${c.pct}%</span></div>
+      <div class="compo-bar-bg"><div class="compo-bar" style="width:${c.pct}%;background:${c.color}"></div></div>
+      <div class="compo-origin">${c.origin}</div>
+    </div>`).join('');
+
+  document.getElementById('pp-care-text').textContent = g.care;
+  document.getElementById('pp-valorisation').innerHTML =
+    `<div style="font-size:11px;font-weight:500;color:var(--accent);margin-bottom:5px;letter-spacing:0.08em;text-transform:uppercase;">End-of-life valorisation</div>
+     <div style="font-size:12px;color:var(--warm-gray);line-height:1.6;">${g.valorisation}</div>`;
+
+  // Eco
+  document.getElementById('pp-eco-grid').innerHTML = g.eco.map(e =>
+    `<div class="eco-card"><div class="eco-icon">${e.icon}</div><div class="eco-val">${e.val}</div><div class="eco-label">${e.label}</div></div>`).join('');
+
+  document.getElementById('pp-certs').innerHTML = g.certs.map(c =>
+    `<div class="cert-row"><div class="cert-icon">${c.icon}</div><div><div class="cert-name">${c.name}</div><div class="cert-body">${c.body}</div></div><div class="cert-check">✓</div></div>`).join('');
+
+  // Reset tabs to Origin
+  document.querySelectorAll('#passportTabs .tab-btn').forEach(b => b.classList.remove('active'));
+  document.querySelector('#passportTabs .tab-btn[data-tab="tab-origin"]').classList.add('active');
+  document.querySelectorAll('#screen-passport-detail .tab-panel').forEach(p => p.classList.remove('active'));
+  document.getElementById('tab-origin').classList.add('active');
+
+  goTo('passport-detail');
+  document.getElementById('screen-passport-detail').querySelector('.scroll-area').scrollTop = 0;
+}
+
+/* ---- FILTER ---- */
+function filterGarments(brand, el) {
+  document.querySelectorAll('.filter-pill').forEach(p => p.classList.remove('active'));
+  el.classList.add('active');
+  document.querySelectorAll('.garment-card').forEach(c => {
+    c.style.display = (brand === 'all' || c.dataset.brand === brand) ? 'flex' : 'none';
+  });
+}
+
+/* ---- SCAN ---- */
+function simulateScan() {
+  const btn = document.getElementById('scanBtn');
+  const line = document.getElementById('scanLine');
+  btn.textContent = 'Reading…';
+  btn.disabled = true;
+  line.classList.add('running');
+  setTimeout(() => {
+    line.classList.remove('running');
+    btn.textContent = '✓ QR Detected';
+    btn.style.background = 'var(--accent)';
+    setTimeout(() => {
+      totalPoints += 150;
+      updatePoints();
+      showToast('✓  +150 points credited!');
+      btn.textContent = 'Simulate Scan';
+      btn.style.background = 'var(--charcoal)';
+      btn.disabled = false;
+      openPassportDetail('zara-dress', 'scan');
+    }, 700);
+  }, 1200);
+}
+
+/* ---- MODAL ---- */
+function openModal(id) {
+  currentReward = id;
+  const r = rewardsData[id];
+  document.getElementById('modalIcon').textContent = r.icon;
+  document.getElementById('modalTitle').textContent = r.title;
+  document.getElementById('modalPtsLine').innerHTML = `Cost: <span>${r.pts} pts</span> — Balance: <span>${totalPoints.toLocaleString('en')} pts</span>`;
+  document.getElementById('modalDesc').textContent = r.desc;
+  document.getElementById('modalCode').textContent = r.code;
+  document.getElementById('modalOverlay').classList.add('open');
+}
+function closeModal() { document.getElementById('modalOverlay').classList.remove('open'); }
+function redeemReward() {
+  const r = rewardsData[currentReward];
+  if (totalPoints >= r.pts) {
+    totalPoints -= r.pts;
+    updatePoints();
+    closeModal();
+    showToast('✓  Voucher activated!');
+  }
+}
+
+/* ---- UTILS ---- */
+function updatePoints() {
+  document.getElementById('pointsDisplay').textContent = totalPoints.toLocaleString('en');
+  document.getElementById('profilePts').textContent = totalPoints.toLocaleString('en');
+  document.getElementById('rewardsPts').textContent = totalPoints.toLocaleString('en') + ' points available';
+}
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2800);
+}
+</script>
+</body>
+</html>
